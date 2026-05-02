@@ -54,6 +54,8 @@ jobs:
       
       - name: 🤖 Run Living README Agent
         id: agent
+        env:
+          BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
         run: python agent/main.py
       
       - name: 📊 Check for Changes
