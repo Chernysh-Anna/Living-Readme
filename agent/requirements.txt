@@ -1,0 +1,18 @@
+# Core dependencies
+python-dotenv==1.0.0
+pyyaml==6.0.1
+gitpython==3.1.40
+
+# File watching and parsing
+watchdog==3.0.0
+jsonschema==4.20.0
+
+# Diff generation
+diff-match-patch==20230430
+
+# GitHub API
+PyGithub==2.1.1
+
+# Utilities
+requests==2.31.0
+colorama==0.4.6
