@@ -54,10 +54,7 @@ jobs:
       
       - name: 🤖 Run Living README Agent
         id: agent
-        run: |
-          cd agent
-          python main.py
-        continue-on-error: true
+        run: python agent/main.py
       
       - name: 📊 Check for Changes
         id: check_changes
