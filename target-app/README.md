@@ -50,7 +50,7 @@ The application uses environment variables for configuration. Create a `.env` fi
 ### Required Variables
 
 - `NODE_ENV`: Environment mode (development/production)
-- `PORT`: Server port (default: 8000)
+- `PORT`: Server port (default: 1234)
 - `HOST`: Server host (default: localhost)
 
 ### Optional Variables
