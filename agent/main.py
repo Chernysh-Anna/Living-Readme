@@ -6,32 +6,53 @@ Coordinates all components to maintain synchronized documentation
 
 import sys
 import json
+import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from datetime import datetime
+
+# Set UTF-8 encoding for Windows console
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 from watcher import LivingReadmeAgent
 from verifier import CommandVerifier
 from reporter import Reporter
 
-try:
-    from colorama import Fore, Style
-except ImportError:
-    class Fore:
-        GREEN = RED = YELLOW = BLUE = CYAN = MAGENTA = WHITE = RESET = ""
-    class Style:
-        BRIGHT = RESET_ALL = ""
+if TYPE_CHECKING:
+    from colorama import Fore as ColoramaFore, Style as ColoramaStyle
+    Fore = ColoramaFore
+    Style = ColoramaStyle
+else:
+    try:
+        from colorama import Fore, Style
+    except ImportError:
+        class Fore:  # type: ignore
+            GREEN = RED = YELLOW = BLUE = CYAN = MAGENTA = WHITE = RESET = ""
+        class Style:  # type: ignore
+            BRIGHT = RESET_ALL = ""
 
 
 class LivingReadmeOrchestrator:
     """Main orchestrator that coordinates all agent components"""
     
-    def __init__(self, config_path: str = 'agent/doc_rules.json'):
-        self.config_path = Path(config_path)
-        self.config = self.load_config()
+    def __init__(self, config_path: Optional[str] = None):
+        # Define project root as parent of agent/ directory
+        self.project_root = Path(__file__).parent.parent
         
-        # Initialize components
-        self.agent = LivingReadmeAgent(str(self.config_path))
+        if config_path is None:
+            # Config is in agent/ directory
+            self.config_path = Path(__file__).parent / 'doc_rules.json'
+        else:
+            self.config_path = Path(config_path)
+        
+        self.config = self.load_config()
+        self.resolve_paths()
+        
+        # Initialize components with resolved config
+        self.agent = LivingReadmeAgent(config=self.config)
         self.verifier = CommandVerifier(self.config)
         self.reporter = Reporter(self.config)
         
@@ -39,12 +60,56 @@ class LivingReadmeOrchestrator:
     
     def load_config(self) -> Dict[str, Any]:
         """Load configuration from doc_rules.json"""
-        if not self.config_path.exists():
-            print(f"{Fore.RED}❌ Configuration file not found: {self.config_path}")
+        try:
+            if not self.config_path.exists():
+                print(f"{Fore.RED}❌ Configuration file not found: {self.config_path}")
+                sys.exit(1)
+            
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"{Fore.RED}❌ Invalid JSON in configuration file: {e}")
             sys.exit(1)
+        except PermissionError as e:
+            print(f"{Fore.RED}❌ Permission denied reading configuration: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"{Fore.RED}❌ Error loading configuration: {e}")
+            sys.exit(1)
+    
+    def resolve_paths(self) -> None:
+        """Resolve all relative paths in config to absolute paths based on project root"""
+        # Resolve target_app path
+        if 'target_app' in self.config and 'path' in self.config['target_app']:
+            target_path = self.config['target_app']['path']
+            if target_path.startswith('./') or target_path.startswith('.\\'):
+                target_path = target_path[2:]
+            self.config['target_app']['path'] = str(self.project_root / target_path)
         
-        with open(self.config_path, 'r') as f:
-            return json.load(f)
+        # Resolve README paths
+        if 'readme_management' in self.config:
+            for key in ['target_readme', 'root_readme']:
+                if key in self.config['readme_management']:
+                    readme_path = self.config['readme_management'][key]
+                    if readme_path.startswith('./') or readme_path.startswith('.\\'):
+                        readme_path = readme_path[2:]
+                    self.config['readme_management'][key] = str(self.project_root / readme_path)
+        
+        # Resolve reporting export path
+        if 'reporting' in self.config and 'export_path' in self.config['reporting']:
+            export_path = self.config['reporting']['export_path']
+            if export_path.startswith('./') or export_path.startswith('.\\'):
+                export_path = export_path[2:]
+            self.config['reporting']['export_path'] = str(self.project_root / export_path)
+        
+        # Resolve verification working directories
+        if 'verification' in self.config and 'commands' in self.config['verification']:
+            for cmd in self.config['verification']['commands']:
+                if 'working_dir' in cmd:
+                    work_dir = cmd['working_dir']
+                    if work_dir.startswith('./') or work_dir.startswith('.\\'):
+                        work_dir = work_dir[2:]
+                    cmd['working_dir'] = str(self.project_root / work_dir)
     
     def print_banner(self):
         """Print startup banner"""

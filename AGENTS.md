@@ -6,8 +6,10 @@ This file provides guidance to agents when working with code in this repository.
 
 ### Python Agent Architecture
 - Agent modules (`watcher.py`, `verifier.py`, `reporter.py`) must be imported in `main.py` - they're designed as standalone modules but orchestrated centrally
-- All Python modules have fallback classes for missing colorama - don't assume colorama is installed
+- All Python modules use `TYPE_CHECKING` for colorama imports - type checkers see correct types, runtime has fallback
 - `watcher.py` contains THREE separate classes (ChangeDetector, ReadmeParser, ReadmeGenerator) - not one monolithic class
+- `main.py` uses `Path(__file__).parent.parent` to define project root - all paths in doc_rules.json are resolved relative to this root
+- Path resolution happens in `resolve_paths()` method - converts relative paths (./target-app) to absolute paths based on project root
 
 ### README Management System
 - README sections MUST use exact marker format: `<!-- MANAGED_SECTION:START:SectionName -->` and `<!-- MANAGED_SECTION:END:SectionName -->`
@@ -45,6 +47,11 @@ This file provides guidance to agents when working with code in this repository.
 - Verification timeout in `doc_rules.json` is in seconds, not milliseconds
 - GitHub Actions workflow expects reports in `bob_sessions/` at project root, not `agent/bob_sessions/`
 - Target app's package.json "main" points to "dist/index.js" - must build before running with `npm start`
+
+## Critical Gotchas (Continued)
+
+- All file operations use `encoding='utf-8'` explicitly - required for Windows compatibility
+- Without explicit encoding, Windows defaults to cp1252 causing UnicodeDecodeError on JSON files
 
 ## Testing
 

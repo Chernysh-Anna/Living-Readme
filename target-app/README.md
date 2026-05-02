@@ -21,11 +21,11 @@ This is a simple Express-based REST API that demonstrates configuration manageme
 
 ### Dev Dependencies
 
-- @types/express: ^4.17.17
-- @types/node: ^20.5.0
-- @types/cors: ^2.8.13
-- typescript: ^5.1.6
-- ts-node: ^10.9.1
+- @types/express: 4.17.17
+- @types/node: 20.5.0
+- @types/cors: 2.8.13
+- typescript: 5.1.6
+- ts-node: 10.9.1
 <!-- MANAGED_SECTION:END:Requirements -->
 
 <!-- MANAGED_SECTION:START:Installation -->
@@ -49,22 +49,15 @@ The application uses environment variables for configuration. Create a `.env` fi
 
 ### Required Variables
 
-- `PORT`: Server port (default: 3000)
-- `HOST`: Server host (default: localhost)
 - `NODE_ENV`: Environment mode (development/production)
+- `PORT`: Server port (default: 9000)
+- `HOST`: Server host (default: localhost)
 
 ### Optional Variables
 
-- `DB_HOST`: Database host
-- `DB_PORT`: Database port
-- `DB_NAME`: Database name
-- `DB_USER`: Database user
-- `DB_PASSWORD`: Database password
-- `API_KEY`: API key for external services
-- `JWT_SECRET`: Secret for JWT token generation
-- `ENABLE_LOGGING`: Enable request logging (true/false)
-- `ENABLE_CORS`: Enable CORS (true/false)
-- `ENABLE_RATE_LIMITING`: Enable rate limiting (true/false)
+- `DB_HOST`: Database configuration
+- `DB_PORT`: Database configuration
+- `DB_NAME`: Database configuration
 <!-- MANAGED_SECTION:END:Configuration -->
 
 <!-- MANAGED_SECTION:START:Running -->

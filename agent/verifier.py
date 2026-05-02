@@ -8,16 +8,21 @@ import subprocess
 import time
 import socket
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 from datetime import datetime
 
-try:
-    from colorama import Fore, Style
-except ImportError:
-    class Fore:
-        GREEN = RED = YELLOW = BLUE = CYAN = MAGENTA = WHITE = RESET = ""
-    class Style:
-        BRIGHT = RESET_ALL = ""
+if TYPE_CHECKING:
+    from colorama import Fore as ColoramaFore, Style as ColoramaStyle
+    Fore = ColoramaFore
+    Style = ColoramaStyle
+else:
+    try:
+        from colorama import Fore, Style
+    except ImportError:
+        class Fore:  # type: ignore
+            GREEN = RED = YELLOW = BLUE = CYAN = MAGENTA = WHITE = RESET = ""
+        class Style:  # type: ignore
+            BRIGHT = RESET_ALL = ""
 
 
 class CommandVerifier:
@@ -172,7 +177,7 @@ class CommandVerifier:
         # Try to read port from .env
         env_path = Path(cmd_config['working_dir']) / '.env'
         if env_path.exists():
-            with open(env_path, 'r') as f:
+            with open(env_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.startswith('PORT='):
                         try:
@@ -294,7 +299,7 @@ def main():
     
     # Load config
     config_path = Path('agent/doc_rules.json')
-    with open(config_path, 'r') as f:
+    with open(config_path, 'r', encoding='utf-8') as f:
         config = json.load(f)
     
     # Run verifications

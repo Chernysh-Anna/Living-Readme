@@ -9,20 +9,25 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 from datetime import datetime
 import subprocess
 
 # Add colorama for better console output
-try:
-    from colorama import init, Fore, Style
-    init(autoreset=True)
-except ImportError:
-    # Fallback if colorama not installed
-    class Fore:
-        GREEN = RED = YELLOW = BLUE = CYAN = MAGENTA = WHITE = RESET = ""
-    class Style:
-        BRIGHT = RESET_ALL = ""
+if TYPE_CHECKING:
+    from colorama import Fore as ColoramaFore, Style as ColoramaStyle
+    Fore = ColoramaFore
+    Style = ColoramaStyle
+else:
+    try:
+        from colorama import init, Fore, Style
+        init(autoreset=True)
+    except ImportError:
+        # Fallback if colorama not installed
+        class Fore:  # type: ignore
+            GREEN = RED = YELLOW = BLUE = CYAN = MAGENTA = WHITE = RESET = ""
+        class Style:  # type: ignore
+            BRIGHT = RESET_ALL = ""
 
 
 class ChangeDetector:
@@ -41,7 +46,7 @@ class ChangeDetector:
             print(f"{Fore.YELLOW}⚠️  package.json not found at {package_json_path}")
             return []
         
-        with open(package_json_path, 'r') as f:
+        with open(package_json_path, 'r', encoding='utf-8') as f:
             package_data = json.load(f)
         
         changes = []
@@ -82,7 +87,7 @@ class ChangeDetector:
         watch_fields = self.config['monitoring']['files'][1]['watch_fields']
         critical_vars = self.config['monitoring']['files'][1]['critical_vars']
         
-        with open(env_path, 'r') as f:
+        with open(env_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#'):
@@ -319,20 +324,41 @@ class ReadmeGenerator:
 class LivingReadmeAgent:
     """Main agent orchestrator"""
     
-    def __init__(self, config_path: str = 'agent/doc_rules.json'):
-        self.config_path = Path(config_path)
-        self.config = self.load_config()
+    def __init__(self, config: Optional[Dict[str, Any]] = None, config_path: str = 'agent/doc_rules.json', project_root: Optional[Path] = None):
+        """
+        Initialize the Living README Agent.
+        
+        Args:
+            config: Pre-loaded and resolved configuration dict (preferred)
+            config_path: Path to config file (used only if config is None)
+            project_root: Project root directory (used only if config is None)
+        """
+        if config is not None:
+            # Use pre-loaded, resolved config from orchestrator
+            self.config = config
+            self.config_path = None
+            self.project_root = None
+        else:
+            # Fallback: load config independently (for standalone usage)
+            self.config_path = Path(config_path)
+            self.project_root = project_root if project_root else Path.cwd()
+            self.config = self.load_config()
+        
         self.detector = ChangeDetector(self.config)
         self.parser = ReadmeParser(self.config)
         self.generator = ReadmeGenerator(self.config)
     
     def load_config(self) -> Dict[str, Any]:
-        """Load configuration from doc_rules.json"""
+        """Load configuration from doc_rules.json (fallback for standalone usage)"""
+        if self.config_path is None:
+            print(f"{Fore.RED}❌ Configuration path not set")
+            sys.exit(1)
+        
         if not self.config_path.exists():
             print(f"{Fore.RED}❌ Configuration file not found: {self.config_path}")
             sys.exit(1)
         
-        with open(self.config_path, 'r') as f:
+        with open(self.config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
     def run(self) -> Dict[str, Any]:
