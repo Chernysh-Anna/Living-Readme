@@ -77,9 +77,23 @@ jobs:
           path: bob_sessions/
           retention-days: 90
       
+      - name: 📝 Configure Git
+        if: steps.check_changes.outputs.changes == 'true' && github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: 📋 Stage Changes
+        if: steps.check_changes.outputs.changes == 'true' && github.event_name != 'pull_request'
+        run: |
+          git add target-app/README.md
+          git add bob_sessions/
+          echo "Staged files:"
+          git status --short
+      
       - name: 🔀 Create Pull Request
         if: steps.check_changes.outputs.changes == 'true' && github.event_name != 'pull_request'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'docs: Update README via Living README Agent'
